@@ -22,3 +22,7 @@ export const REGION_CENTER: [number, number] = [
   (REGION_BBOX[0] + REGION_BBOX[2]) / 2,
   (REGION_BBOX[1] + REGION_BBOX[3]) / 2,
 ];
+
+// Default whole-world view.
+export const WORLD_CENTER: [number, number] = [20, 25];
+export const WORLD_ZOOM = 1.4;
