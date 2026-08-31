@@ -10,7 +10,7 @@ const PRIORITY_STOPS = [
 
 export function Legend({ mode }: { mode: "class" | "priority" }) {
   return (
-    <div className="absolute bottom-4 left-4 z-10 rounded-lg border border-ocean-800 bg-ocean-900/85 p-3 backdrop-blur">
+    <div className="rounded-lg border border-ocean-800 bg-ocean-900/85 p-3 backdrop-blur">
       <div className="mb-2 text-[10px] uppercase tracking-wider text-[#6b8299]">
         {mode === "class" ? "Debris class" : "Cleanup priority"}
       </div>

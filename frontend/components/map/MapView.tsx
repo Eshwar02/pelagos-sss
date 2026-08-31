@@ -10,6 +10,8 @@ import { CLASS_HEX, priorityHex, hexToRgb, CLASS_LABEL, STATUS_LABEL } from "@/l
 import { OCEAN_STYLE, REGION_BBOX, REGION_CENTER, WORLD_CENTER, WORLD_ZOOM } from "./mapStyle";
 import { createWaterLayer, type WaterHandle } from "./WaterLayer";
 import { Legend } from "./Legend";
+import { WaveLegend } from "./WaveLegend";
+import { UploadControl } from "./UploadControl";
 import { meters, pct } from "@/lib/format";
 import { Layers, Waves as WavesIcon, Crosshair, Pause, Play } from "lucide-react";
 
@@ -20,12 +22,15 @@ interface HoverInfo {
   target: Target;
 }
 
-// Mean significant wave height -> 0..1 animation intensity.
-function waveIntensity(waves: WaveField[]): number {
-  if (!waves.length) return 0.6;
+// Mean significant wave height across the current forecast timestep.
+function meanHs(waves: WaveField[]): number {
+  if (!waves.length) return 1.3;
   const cells = waves[0].cells;
-  const mean = cells.reduce((s, c) => s + c.hs, 0) / cells.length;
-  return Math.max(0, Math.min(1, (mean - 0.8) / 1.6));
+  return cells.reduce((s, c) => s + c.hs, 0) / cells.length;
+}
+// Map mean Hs -> 0..1 animation intensity.
+function toIntensity(hs: number): number {
+  return Math.max(0, Math.min(1, (hs - 0.8) / 1.6));
 }
 
 export function MapView({ targets, waves }: { targets: Target[]; waves: WaveField[] }) {
@@ -39,8 +44,11 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
   const [waterOn, setWaterOn] = useState(true);
   const [hover, setHover] = useState<HoverInfo | null>(null);
   const [ready, setReady] = useState(false);
+  const [extraTargets, setExtraTargets] = useState<Target[]>([]);
 
-  const intensity = waveIntensity(waves);
+  const hs = meanHs(waves);
+  const intensity = toIntensity(hs);
+  const allTargets = extraTargets.length ? [...targets, ...extraTargets] : targets;
 
   const bboxLayer = useCallback(
     () =>
@@ -68,7 +76,7 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
     (h: HoverInfo | null) =>
       new ScatterplotLayer<Target>({
         id: "targets",
-        data: targets,
+        data: allTargets,
         pickable: true,
         stroked: true,
         radiusUnits: "meters",
@@ -98,7 +106,7 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
           setHover(next);
         },
       }),
-    [targets, mode],
+    [allTargets, mode],
   );
 
   const pushLayers = useCallback(() => {
@@ -135,7 +143,7 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
       waterRef.current = water;
 
       // 2) Land masses on top of the water.
-      map.addSource("land", { type: "geojson", data: "/geo/land-110m.geojson" });
+      map.addSource("land", { type: "geojson", data: "/geo/land-50m.geojson" });
       map.addLayer({
         id: "land-fill",
         type: "fill",
@@ -178,6 +186,11 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
     mapRef.current?.flyTo({ center: REGION_CENTER, zoom: 10.5, duration: 1800 });
   const flyToWorld = () =>
     mapRef.current?.flyTo({ center: WORLD_CENTER, zoom: WORLD_ZOOM, duration: 1400 });
+
+  const handleAnalysed = (fresh: Target[]) => {
+    setExtraTargets((prev) => [...prev, ...fresh]);
+    flyToRegion();
+  };
 
   return (
     <div className="relative h-full w-full">
@@ -229,7 +242,14 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
         </button>
       </div>
 
-      <Legend mode={mode} />
+      {/* Legends, bottom-right */}
+      <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
+        {waterOn && <WaveLegend meanHs={hs} />}
+        <Legend mode={mode} />
+      </div>
+
+      {/* Upload FAB, bottom-left */}
+      <UploadControl onAnalysed={handleAnalysed} />
 
       {/* Hover tooltip */}
       {hover && (

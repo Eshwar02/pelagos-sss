@@ -17,7 +17,7 @@ export const OCEAN_STYLE: StyleSpecification = {
 };
 
 // Gulf of Mannar / Palk Strait theatre.
-export const REGION_BBOX: [number, number, number, number] = [78.9, 8.75, 79.45, 9.35];
+export const REGION_BBOX: [number, number, number, number] = [78.75, 8.55, 79.2, 9.05];
 export const REGION_CENTER: [number, number] = [
   (REGION_BBOX[0] + REGION_BBOX[2]) / 2,
   (REGION_BBOX[1] + REGION_BBOX[3]) / 2,

@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     cors_origins: list[str] = ["http://localhost:3000", "http://127.0.0.1:3000"]
 
     # Gulf of Mannar / Palk Strait theatre bounding box (min_lon, min_lat, max_lon, max_lat).
-    region_bbox: tuple[float, float, float, float] = (78.90, 8.75, 79.45, 9.35)
+    region_bbox: tuple[float, float, float, float] = (78.75, 8.55, 79.20, 9.05)
     region_name: str = "Gulf of Mannar"
 
     # Copernicus Marine — Global Ocean Waves Analysis and Forecast (GLOBAL_ANALYSISFORECAST_WAV_001_027).

@@ -16,7 +16,10 @@ SEED = 20260831
 FIX_DIR = Path(__file__).resolve().parent.parent / "app" / "fixtures"
 
 # Gulf of Mannar / Palk Strait theatre.
-BBOX = (78.90, 8.75, 79.45, 9.35)  # min_lon, min_lat, max_lon, max_lat
+BBOX = (78.75, 8.55, 79.20, 9.05)  # min_lon, min_lat, max_lon, max_lat (wave grid extent)
+# Targets sit in open Gulf of Mannar water, inset from the coast so they never
+# land on the Tamil Nadu / Rameswaram shoreline.
+TARGET_BBOX = (78.82, 8.62, 79.10, 8.98)
 REGION = "Gulf of Mannar"
 
 CLASSES = [
@@ -49,8 +52,8 @@ def make_target(i: int, rng: random.Random) -> dict:
         k=1,
     )[0]
 
-    lon = round(rng.uniform(BBOX[0] + 0.02, BBOX[2] - 0.02), 5)
-    lat = round(rng.uniform(BBOX[1] + 0.02, BBOX[3] - 0.02), 5)
+    lon = round(rng.uniform(TARGET_BBOX[0], TARGET_BBOX[2]), 5)
+    lat = round(rng.uniform(TARGET_BBOX[1], TARGET_BBOX[3]), 5)
     depth = _r(4, 42, 1)
 
     n_obs = rng.randint(1, 9)
