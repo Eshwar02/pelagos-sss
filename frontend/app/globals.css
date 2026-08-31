@@ -1,0 +1,56 @@
+@import "tailwindcss";
+
+/* Dark operations-console theme — reads as a survey instrument, not a student app. */
+@theme {
+  --color-ocean-950: #04101a;
+  --color-ocean-900: #071a28;
+  --color-ocean-850: #0a2233;
+  --color-ocean-800: #0e2c42;
+  --color-ocean-700: #16455f;
+  --color-teal-400: #2dd4bf;
+  --color-teal-300: #5eead4;
+  --color-amber-400: #fbbf24;
+  --color-coral-500: #ff5470;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--color-ocean-950);
+  color: #cde3ef;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Thin, instrument-grade scrollbars. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #16455f transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: #16455f;
+  border-radius: 4px;
+}
+
+.mono {
+  font-family: ui-monospace, "SFMono-Regular", "Menlo", monospace;
+}
+
+/* MapLibre canvas fills its parent. */
+.maplibregl-map {
+  font-family: inherit;
+}
+.maplibregl-ctrl-attrib {
+  background: rgba(4, 16, 26, 0.7) !important;
+  color: #6b8299 !important;
+}
+.maplibregl-ctrl-attrib a {
+  color: #8aa6bb !important;
+}
