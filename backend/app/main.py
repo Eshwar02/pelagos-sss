@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
-from app.routers import stats, targets, waves
+from app.routers import analytics, jobs, stats, surveys, targets, tiles, waves
 
 settings = get_settings()
 
@@ -25,6 +25,10 @@ app.add_middleware(
 )
 
 app.include_router(targets.router)
+app.include_router(surveys.router)
+app.include_router(jobs.router)
+app.include_router(tiles.router)
+app.include_router(analytics.router)
 app.include_router(stats.router)
 app.include_router(waves.router)
 

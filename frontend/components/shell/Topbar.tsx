@@ -6,6 +6,9 @@ import { Circle } from "lucide-react";
 const TITLES: Record<string, string> = {
   "/": "Operations Dashboard",
   "/map": "Target Map",
+  "/review": "Review Console",
+  "/plan": "Dive Plan",
+  "/metrics": "Metrics & Ablation",
 };
 
 export function Topbar() {

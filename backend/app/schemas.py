@@ -104,3 +104,139 @@ class WaveField(BaseModel):
     source: Literal["copernicus", "fixture"]
     bbox: tuple[float, float, float, float]
     cells: list[WaveCell]
+
+
+# --------------------------------------------------------------------------- #
+# Surveys, jobs, review and the operator artefacts (report §8, §9)            #
+# --------------------------------------------------------------------------- #
+
+
+class Survey(BaseModel):
+    """A single sonar survey mission — the unit the pipeline runs over."""
+
+    id: str
+    name: str
+    region: str
+    vessel: str
+    sonar_model: str
+    frequency_khz: float
+    range_setting_m: float
+    track: list[tuple[float, float]] = Field(description="Survey line as [lon, lat] vertices")
+    surveyed_km2: float
+    operator_org: str
+    n_targets: int
+    start_ts: datetime
+    end_ts: datetime
+
+
+PipelineStage = Literal[
+    "alai_ingest",
+    "alai_preprocess",
+    "detect",
+    "valai_segment",
+    "nizhal_verify",
+    "artificiality",
+    "openset",
+    "thadam_track",
+    "geo_context",
+    "padai_prioritise",
+]
+
+JobKind = Literal["ingest", "infer"]
+JobState = Literal["queued", "running", "done", "error"]
+
+
+class Job(BaseModel):
+    """An async ingest/infer job whose progress is streamed over SSE."""
+
+    id: str
+    survey_id: str
+    kind: JobKind
+    state: JobState
+    stage: PipelineStage | None = None
+    progress: float = Field(ge=0, le=1, default=0.0)
+    message: str = ""
+
+
+class ReviewAction(BaseModel):
+    """Operator confirm / reject / reclassify — feeds the active-learning queue."""
+
+    action: Literal["confirm", "reject", "reclassify"]
+    new_class: ObjectClass | None = None
+    operator: str = "operator"
+    note: str = ""
+
+
+class ReviewEvent(BaseModel):
+    target_id: str
+    action: Literal["confirm", "reject", "reclassify"]
+    old_class: ObjectClass
+    new_class: ObjectClass
+    old_status: TargetStatus
+    new_status: TargetStatus
+    operator: str
+    ts: datetime
+    note: str = ""
+
+
+class PriorityWeights(BaseModel):
+    """Operator-tunable weights for the cleanup-priority scoring function (§6.3)."""
+
+    confidence: float = Field(ge=0, le=1, default=0.30)
+    entanglement: float = Field(ge=0, le=1, default=0.28)
+    reef: float = Field(ge=0, le=1, default=0.18)
+    access: float = Field(ge=0, le=1, default=0.16)
+    cluster: float = Field(ge=0, le=1, default=0.08)
+
+
+class SimilarTarget(BaseModel):
+    """A nearest-neighbour of a query target (pgvector stand-in — cosine sim)."""
+
+    target: Target
+    similarity: float = Field(ge=0, le=1)
+
+
+class CalibrationBin(BaseModel):
+    confidence: float
+    accuracy: float
+    count: int
+
+
+class StageLatency(BaseModel):
+    stage: PipelineStage
+    ms: float
+
+
+class AblationRung(BaseModel):
+    step: int
+    config: str
+    false_alarms_per_km2: float
+    recall: float
+
+
+class Metrics(BaseModel):
+    """Operational + model metrics for the metrics page (§11)."""
+
+    survey_id: str
+    region: str
+    surveyed_km2: float
+    recall: float
+    false_alarms_per_km2: float
+    mean_confidence: float
+    localisation_error_m: float
+    pct_confirmed_multi_ping: float
+    calibration: list[CalibrationBin]
+    stage_latency: list[StageLatency]
+    ablation: list[AblationRung]
+
+
+class DziDescriptor(BaseModel):
+    """OpenSeadragon deep-zoom descriptor for a survey waterfall image."""
+
+    survey_id: str
+    width: int
+    height: int
+    tile_size: int
+    overlap: int
+    format: str
+    url_template: str
