@@ -4,7 +4,15 @@ import { pct, meters, priorityBand } from "@/lib/format";
 import { Chip } from "@/components/common/Chip";
 import { EvidenceBar } from "@/components/common/EvidenceBar";
 
-export function TargetTable({ targets }: { targets: Target[] }) {
+export function TargetTable({
+  targets,
+  onSelect,
+  selectedId,
+}: {
+  targets: Target[];
+  onSelect?: (t: Target) => void;
+  selectedId?: string | null;
+}) {
   return (
     <div className="overflow-hidden rounded-xl border border-ocean-800 bg-ocean-900">
       <div className="flex items-center justify-between border-b border-ocean-800 px-5 py-3.5">
@@ -28,7 +36,10 @@ export function TargetTable({ targets }: { targets: Target[] }) {
             {targets.map((t) => (
               <tr
                 key={t.id}
-                className="border-t border-ocean-800/60 transition-colors hover:bg-ocean-850"
+                onClick={() => onSelect?.(t)}
+                className={`cursor-pointer border-t border-ocean-800/60 transition-colors hover:bg-ocean-850 ${
+                  selectedId === t.id ? "bg-ocean-850" : ""
+                }`}
               >
                 <td className="mono px-5 py-3 text-[#cde3ef]">{t.id}</td>
                 <td className="px-3 py-3">

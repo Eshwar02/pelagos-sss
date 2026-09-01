@@ -1,16 +1,30 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { fetchStats, fetchTargets } from "@/lib/api";
 import { useAsync } from "@/lib/hooks";
+import type { Target } from "@/lib/types";
 import { StatCard } from "@/components/dashboard/StatCard";
 import { ClassBreakdown } from "@/components/dashboard/ClassBreakdown";
 import { TargetTable } from "@/components/dashboard/TargetTable";
+import { TargetDetail } from "@/components/detail/TargetDetail";
 
 export default function DashboardPage() {
   const stats = useAsync(fetchStats);
-  const targets = useAsync(() => fetchTargets());
+  const targetsReq = useAsync(() => fetchTargets());
+  const [targets, setTargets] = useState<Target[]>([]);
+  const [selected, setSelected] = useState<Target | null>(null);
 
-  if (stats.error || targets.error) {
+  useEffect(() => {
+    if (targetsReq.data) setTargets(targetsReq.data);
+  }, [targetsReq.data]);
+
+  function applyReview(updated: Target) {
+    setTargets((ts) => ts.map((t) => (t.id === updated.id ? updated : t)));
+    setSelected((s) => (s && s.id === updated.id ? updated : s));
+  }
+
+  if (stats.error || targetsReq.error) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-center">
         <div>
@@ -26,51 +40,52 @@ export default function DashboardPage() {
   const s = stats.data;
 
   return (
-    <div className="h-full overflow-y-auto p-6">
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <StatCard label="Targets" value={s?.total ?? "—"} sub={s ? `${s.confirmed} confirmed` : ""} />
-        <StatCard
-          label="Needs review"
-          value={s?.review ?? "—"}
-          sub="open-set anomalies"
-          accent="#f472b6"
-        />
-        <StatCard
-          label="High priority"
-          value={s?.high_priority ?? "—"}
-          sub="≥ 0.70"
-          accent="#ff5470"
-        />
-        <StatCard
-          label="Mean confidence"
-          value={s ? `${Math.round(s.mean_confidence * 100)}%` : "—"}
-          accent="#fbbf24"
-        />
-        <StatCard
-          label="False alarms / km²"
-          value={s?.false_alarms_per_km2 ?? "—"}
-          sub={s ? `${s.surveyed_km2} km² surveyed` : ""}
-        />
+    <div className="relative h-full">
+      <div className="h-full overflow-y-auto p-6">
+        {/* Stat cards */}
+        <div className="grid grid-cols-2 gap-4 lg:grid-cols-5">
+          <StatCard label="Targets" value={s?.total ?? "—"} sub={s ? `${s.confirmed} confirmed` : ""} />
+          <StatCard label="Needs review" value={s?.review ?? "—"} sub="open-set anomalies" accent="#f472b6" />
+          <StatCard label="High priority" value={s?.high_priority ?? "—"} sub="≥ 0.70" accent="#ff5470" />
+          <StatCard
+            label="Mean confidence"
+            value={s ? `${Math.round(s.mean_confidence * 100)}%` : "—"}
+            accent="#fbbf24"
+          />
+          <StatCard
+            label="False alarms / km²"
+            value={s?.false_alarms_per_km2 ?? "—"}
+            sub={s ? `${s.surveyed_km2} km² surveyed` : ""}
+          />
+        </div>
+
+        {/* Breakdown + table */}
+        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <div className="lg:col-span-1">
+            {s ? (
+              <ClassBreakdown items={s.by_class} />
+            ) : (
+              <div className="h-48 animate-pulse rounded-xl border border-ocean-800 bg-ocean-900" />
+            )}
+          </div>
+          <div className="lg:col-span-2">
+            {targets.length ? (
+              <TargetTable targets={targets} onSelect={setSelected} selectedId={selected?.id} />
+            ) : (
+              <div className="h-96 animate-pulse rounded-xl border border-ocean-800 bg-ocean-900" />
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Breakdown + region note */}
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-1">
-          {s ? (
-            <ClassBreakdown items={s.by_class} />
-          ) : (
-            <div className="h-48 animate-pulse rounded-xl border border-ocean-800 bg-ocean-900" />
-          )}
-        </div>
-        <div className="lg:col-span-2">
-          {targets.data ? (
-            <TargetTable targets={targets.data} />
-          ) : (
-            <div className="h-96 animate-pulse rounded-xl border border-ocean-800 bg-ocean-900" />
-          )}
-        </div>
-      </div>
+      {selected && (
+        <TargetDetail
+          target={selected}
+          onClose={() => setSelected(null)}
+          onReviewed={applyReview}
+          onSelect={setSelected}
+        />
+      )}
     </div>
   );
 }

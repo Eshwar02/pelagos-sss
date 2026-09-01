@@ -12,6 +12,8 @@ import { createWaterLayer, type WaterHandle } from "./WaterLayer";
 import { Legend } from "./Legend";
 import { WaveLegend } from "./WaveLegend";
 import { UploadControl } from "./UploadControl";
+import { InferenceRunner } from "./InferenceRunner";
+import { TargetDetail } from "@/components/detail/TargetDetail";
 import { meters, pct } from "@/lib/format";
 import { Layers, Waves as WavesIcon, Crosshair, Pause, Play } from "lucide-react";
 
@@ -45,10 +47,13 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
   const [hover, setHover] = useState<HoverInfo | null>(null);
   const [ready, setReady] = useState(false);
   const [extraTargets, setExtraTargets] = useState<Target[]>([]);
+  const [selected, setSelected] = useState<Target | null>(null);
+  const [reviewed, setReviewed] = useState<Record<string, Target>>({});
 
   const hs = meanHs(waves);
   const intensity = toIntensity(hs);
-  const allTargets = extraTargets.length ? [...targets, ...extraTargets] : targets;
+  const baseTargets = extraTargets.length ? [...targets, ...extraTargets] : targets;
+  const allTargets = baseTargets.map((t) => reviewed[t.id] ?? t);
 
   const bboxLayer = useCallback(
     () =>
@@ -94,7 +99,7 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
           h && h.target.id === t.id ? [255, 255, 255, 255] : [4, 16, 26, 200],
         getLineWidth: (t) => (h && h.target.id === t.id ? 3 : 1),
         updateTriggers: {
-          getFillColor: [mode],
+          getFillColor: [mode, allTargets],
           getLineColor: [h?.target.id],
           getLineWidth: [h?.target.id],
         },
@@ -104,6 +109,9 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
             : null;
           hoverRef.current = next;
           setHover(next);
+        },
+        onClick: (info) => {
+          if (info.object) setSelected(info.object as Target);
         },
       }),
     [allTargets, mode],
@@ -192,6 +200,11 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
     flyToRegion();
   };
 
+  const handleReviewed = (updated: Target) => {
+    setReviewed((prev) => ({ ...prev, [updated.id]: updated }));
+    setSelected((s) => (s && s.id === updated.id ? updated : s));
+  };
+
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" />
@@ -242,6 +255,11 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
         </button>
       </div>
 
+      {/* Inference runner, top-right (below nav control) */}
+      <div className="absolute right-4 top-20 z-10">
+        <InferenceRunner />
+      </div>
+
       {/* Legends, bottom-right */}
       <div className="absolute bottom-4 right-4 z-10 flex flex-col items-end gap-2">
         {waterOn && <WaveLegend meanHs={hs} />}
@@ -278,6 +296,15 @@ export function MapView({ targets, waves }: { targets: Target[]; waves: WaveFiel
         <div className="absolute inset-0 z-30 flex items-center justify-center bg-ocean-950">
           <span className="text-xs text-[#6b8299]">initialising chart…</span>
         </div>
+      )}
+
+      {selected && (
+        <TargetDetail
+          target={selected}
+          onClose={() => setSelected(null)}
+          onReviewed={handleReviewed}
+          onSelect={setSelected}
+        />
       )}
     </div>
   );
